@@ -1,0 +1,221 @@
+CREATE DATABASE UniversityDB
+GO
+USE UniversityDB
+
+CREATE TABLE Subjects(
+[Id] INT PRIMARY KEY IDENTITY(1,1) NOT NULL,
+[Name] NVARCHAR(100) NOT NULL,
+CHECK([Name]!=''),
+UNIQUE([Name])
+)
+
+INSERT INTO Subjects([Name])
+VALUES('Programming'),
+('Designer'),
+('Cyber Security')
+
+
+CREATE TABLE Curators(
+[Id] INT PRIMARY KEY IDENTITY(1,1) NOT NULL,
+[Name] NVARCHAR(MAX) NOT NULL,
+CHECK([Name]!=''),
+[Surname] NVARCHAR(MAX) NOT NULL,
+CHECK([Surname]!='')
+
+)
+
+INSERT INTO Curators([Name],[Surname])
+VALUES('Aydin','Hesimli'),
+('Revan','Sadiqov'),
+('Kamran','Kerimzade')
+
+
+
+CREATE TABLE Teachers(
+[Id] INT PRIMARY KEY IDENTITY(1,1) NOT NULL,
+[Name] NVARCHAR(MAX) NOT NULL,
+CHECK([Name]!=''),
+[Salary] MONEY NOT NULL,
+CHECK([Salary]>0 AND [Salary]!=0),
+[Surname] NVARCHAR(MAX) NOT NULL,
+CHECK([Surname]!='')
+
+)
+
+INSERT INTO Teachers([Name],[Salary],[Surname])
+VALUES('Orxan',1000,'Mirzeyev'),
+('Nigar',600,'Huseynzade'),
+('Ferid',750,'Bagirov'),
+('Leyla',800,'Bagirzade'),
+('Eli',850,'Novruzov')
+
+--SELECT * FROM Teachers
+
+CREATE TABLE Lectures(
+[Id] INT PRIMARY KEY IDENTITY(1,1) NOT NULL,
+[LectureRoom] NVARCHAR(MAX) NOT NULL,
+CHECK([LectureRoom]!=''),
+[SubjectId] INT FOREIGN KEY REFERENCES Subjects(Id) NOT NULL,
+[TeacherId] INT FOREIGN KEY REFERENCES Teachers(Id) NOT NULL
+
+)
+
+INSERT INTO Lectures([LectureRoom],[SubjectId],[TeacherId])
+VALUES('1122',1,2),
+('3344',2,2),
+('5566',3,3)
+
+--SELECT * FROM Lectures
+
+
+CREATE TABLE Faculties(
+[Id] INT PRIMARY KEY IDENTITY(1,1) NOT NULL,
+[Financing] MONEY DEFAULT(0) NOT NULL,
+CHECK([Financing]>0),
+[Name] NVARCHAR(100) NOT NULL,
+CHECK([Name]!=''),
+UNIQUE([Name]),
+)
+
+INSERT INTO Faculties([Financing],[Name])
+VALUES(1000,'ProgrammingFaculties'),
+(900,'DesignerFaculties'),
+(1200,'CyberSecurityFaculties')
+
+
+CREATE TABLE Departments(
+[Id] INT PRIMARY KEY IDENTITY(1,1) NOT NULL,
+[Financing] MONEY DEFAULT(0) NOT NULL,
+CHECK([Financing]>0),
+[Name] NVARCHAR(100) NOT NULL,
+CHECK([Name]!=''),
+UNIQUE([Name]),
+[FacultyId] INT FOREIGN KEY REFERENCES Faculties(Id) NOT NULL,
+
+)
+
+INSERT INTO Departments([Financing],[Name],[FacultyId])
+VALUES(2000,'ProgrammingDepartment',1),
+(1500,'DesignerDepartment',2),
+(2500,'Cyber SecurityDepartment',3)
+
+
+CREATE TABLE Groups(
+[Id] INT PRIMARY KEY IDENTITY(1,1) NOT NULL,
+[Name] NVARCHAR(100) NOT NULL,
+CHECK([Name]!=''),
+UNIQUE([Name]),
+[Year] INT NOT NULL,
+CHECK([Year]>=1 AND [Year]<=5),
+[DepartmentId] INT FOREIGN KEY REFERENCES Departments(Id) NOT NULL
+
+)
+
+INSERT INTO Groups([Name],[Year],[DepartmentId])
+VALUES('AA123',3,1),
+('BB234',4,2),
+('CC345',2,3)
+
+CREATE TABLE GroupsCurators(
+[Id] INT PRIMARY KEY IDENTITY(1,1) NOT NULL,
+[CuratorId] INT FOREIGN KEY REFERENCES Curators(Id) NOT NULL,
+[GroupId] INT FOREIGN KEY REFERENCES Groups(Id) NOT NULL
+
+)
+
+INSERT INTO GroupsCurators([CuratorId],[GroupId])
+VALUES(1,1),
+(2,2),
+(3,3)
+
+CREATE TABLE GroupsLectures(
+[Id] INT PRIMARY KEY IDENTITY(1,1) NOT NULL,
+[GroupId] INT FOREIGN KEY REFERENCES Groups(Id) NOT NULL,
+[LectureId] INT FOREIGN KEY REFERENCES Lectures(Id) NOT NULL
+
+)
+
+INSERT INTO GroupsLectures([GroupId],[LectureId])
+VALUES(1,1),
+(2,2),
+(3,3)
+
+--1 Print all possible pairs of lines of teachers and groups.
+SELECT T.[Name],G.[Name]
+FROM Teachers AS T,Lectures AS L,GroupsLectures AS GL,Groups AS G
+WHERE T.[Id]=L.[TeacherId] AND L.Id=GL.LectureId AND GL.[GroupId]=G.[DepartmentId]
+
+--2 Print names of faculties, where financing fund of departments
+--exceeds financing fund of the faculty.
+SELECT *
+FROM Departments AS D, Faculties AS F
+WHERE D.FacultyId=F.Id AND D.[Financing]>F.[Financing]
+
+--3 Print names of the group curators and groups names they are
+--supervising.
+SELECT C.[Name],G.[Name]
+FROM Curators AS C, Groups AS G 
+WHERE C.Id=G.Id
+
+
+--4 Print names of the teachers who deliver lectures in the group
+--"P107".
+SELECT T.[Name]
+FROM Teachers AS T,Lectures AS L, GroupsLectures AS GL,Groups AS G
+WHERE T.[Id]=L.TeacherId AND L.Id=GL.LectureId AND GL.GroupId=G.Id
+AND G.[Name]='CC345'
+
+
+--5 Print names of the teachers and names of the faculties where
+--they are lecturing.
+SELECT T.[Name],F.[Name]
+FROM Teachers AS T,Faculties AS F
+WHERE T.Id=F.Id
+
+--6 Print names of the departments and names of the groups that
+--relate to them.
+SELECT  D.[Name],G.[Name]
+FROM Departments AS D,Groups AS G
+WHERE D.[Id]=G.[DepartmentId]
+
+--7 Print names of the subjects that the teacher "Samantha Adams"
+--teaches.
+SELECT S.[Name]
+FROM Subjects AS S,Lectures AS L,Teachers AS T
+WHERE S.[Id]=L.[SubjectId] AND L.[TeacherId]=T.[Id]
+AND T.[Name]='Ferid'
+
+--8 Print names of the departments, where "Database Theory"
+--is taught.---------------------------
+SELECT D.[Name]
+FROM Departments AS D
+WHERE D.[Name]='ProgrammingDepartment'
+
+--9 Print names of the groups that belong to the "Computer Sci-
+--ence" faculty.
+SELECT G.[Name]
+FROM Groups AS G, Departments AS D,Faculties AS F
+WHERE G.[DepartmentId]=D.[Id] AND D.[FacultyId]=F.[Id]
+AND F.[Name]='ProgrammingFaculties'
+
+--10 Print names of the 5th year groups, as well as names of the fac-
+--ulties to which they relate.
+SELECT G.[Name],F.[Name] AS FacultyName
+FROM Groups AS G, Departments AS D, Faculties AS F
+WHERE G.[DepartmentId]=D.Id AND D.[FacultyId]=F.[Id]
+AND G.[Year]=4
+
+--11 Print full names of the teachers and lectures they deliver (names
+--of subjects and groups), and select only those lectures that are
+--delivered in the classroom "B103".
+SELECT T.[Name],T.[Surname],S.[Name] AS SubjectsName
+FROM Teachers AS T,Lectures AS L, Subjects AS S
+WHERE T.[Id]=L.[TeacherId] AND L.LectureRoom='1122' 
+
+
+
+
+
+
+
+
